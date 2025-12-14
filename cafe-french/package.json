@@ -1,0 +1,31 @@
+{
+  "name": "cafe-french",
+  "version": "2.0.0",
+  "description": "AI-first French learning app with evidence-based learning",
+  "private": true,
+  "workspaces": [
+    "mobile",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "backend:dev": "cd backend && npm run dev",
+    "backend:build": "cd backend && npm run build",
+    "mobile:start": "cd mobile && npm start",
+    "mobile:android": "cd mobile && npm run android",
+    "mobile:ios": "cd mobile && npm run ios",
+    "install:all": "npm install && cd backend && npm install && cd ../mobile && npm install && cd ../shared && npm install"
+  },
+  "keywords": [
+    "french",
+    "learning",
+    "ai",
+    "language",
+    "education"
+  ],
+  "author": "Café French Team",
+  "license": "MIT",
+  "dependencies": {
+    "canvas": "^3.2.0"
+  }
+}
