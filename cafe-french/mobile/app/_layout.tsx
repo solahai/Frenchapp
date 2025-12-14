@@ -1,17 +1,16 @@
 // Root Layout - App Entry Point
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
-import { useFonts } from 'expo-font';
 import { initializeAuth, useAuthStore } from '../src/store/authStore';
 import { colors } from '../src/theme';
 
 // Keep splash screen visible while loading
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Create query client
 const queryClient = new QueryClient({
@@ -24,7 +23,7 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({});
+  const [appReady, setAppReady] = useState(false);
   const { isLoading, setLoading } = useAuthStore();
 
   useEffect(() => {
@@ -36,18 +35,19 @@ export default function RootLayout() {
         console.warn('Error initializing auth:', e);
       } finally {
         setLoading(false);
+        setAppReady(true);
       }
     }
     prepare();
   }, []);
 
   useEffect(() => {
-    if (!isLoading && fontsLoaded) {
-      SplashScreen.hideAsync();
+    if (appReady && !isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
     }
-  }, [isLoading, fontsLoaded]);
+  }, [appReady, isLoading]);
 
-  if (isLoading || !fontsLoaded) {
+  if (!appReady || isLoading) {
     return null;
   }
 

@@ -3,7 +3,9 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+// Backend API URL configuration
+// Using HTTPS via nginx proxy
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://generativeais.ca/cafefrench/api';
 
 interface ApiResponse<T> {
   success: boolean;
