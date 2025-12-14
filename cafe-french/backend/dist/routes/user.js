@@ -5,12 +5,12 @@ const express_1 = require("express");
 const database_1 = require("../services/database");
 const errorHandler_1 = require("../middleware/errorHandler");
 const router = (0, express_1.Router)();
-const db = database_1.DatabaseService.getInstance().getDb();
+const getDb = () => database_1.DatabaseService.getInstance().getDb();
 // GET /user/profile
 router.get('/profile', (req, res, next) => {
     try {
         const userId = req.user.userId;
-        const user = db.prepare(`
+        const user = getDb().prepare(`
       SELECT id, email, display_name, avatar_url, preferences, profile, created_at
       FROM users WHERE id = ?
     `).get(userId);
@@ -39,7 +39,7 @@ router.put('/profile', (req, res, next) => {
     try {
         const userId = req.user.userId;
         const { displayName, avatarUrl, learnerProfile } = req.body;
-        const user = db.prepare('SELECT profile FROM users WHERE id = ?').get(userId);
+        const user = getDb().prepare('SELECT profile FROM users WHERE id = ?').get(userId);
         if (!user) {
             throw new errorHandler_1.NotFoundError('User');
         }
@@ -47,7 +47,7 @@ router.put('/profile', (req, res, next) => {
         const updatedProfile = learnerProfile
             ? { ...currentProfile, ...learnerProfile }
             : currentProfile;
-        db.prepare(`
+        getDb().prepare(`
       UPDATE users SET
         display_name = COALESCE(?, display_name),
         avatar_url = COALESCE(?, avatar_url),
@@ -76,13 +76,13 @@ router.put('/preferences', (req, res, next) => {
         if (!preferences) {
             throw new errorHandler_1.ValidationError('Preferences object required');
         }
-        const user = db.prepare('SELECT preferences FROM users WHERE id = ?').get(userId);
+        const user = getDb().prepare('SELECT preferences FROM users WHERE id = ?').get(userId);
         if (!user) {
             throw new errorHandler_1.NotFoundError('User');
         }
         const currentPrefs = JSON.parse(user.preferences);
         const updatedPrefs = { ...currentPrefs, ...preferences };
-        db.prepare(`
+        getDb().prepare(`
       UPDATE users SET preferences = ?, updated_at = ? WHERE id = ?
     `).run(JSON.stringify(updatedPrefs), new Date().toISOString(), userId);
         res.json({
@@ -99,19 +99,19 @@ router.get('/stats', (req, res, next) => {
     try {
         const userId = req.user.userId;
         // Get lesson stats
-        const lessonStats = db.prepare(`
+        const lessonStats = getDb().prepare(`
       SELECT 
         COUNT(*) as total_lessons,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_lessons
       FROM lessons WHERE user_id = ?
     `).get(userId);
         // Get conversation stats
-        const conversationStats = db.prepare(`
+        const conversationStats = getDb().prepare(`
       SELECT COUNT(*) as total_conversations
       FROM conversations WHERE user_id = ?
     `).get(userId);
         // Get SRS stats
-        const srsStats = db.prepare(`
+        const srsStats = getDb().prepare(`
       SELECT
         COUNT(*) as total_cards,
         SUM(CASE WHEN status = 'review' THEN 1 ELSE 0 END) as mastered_cards,
@@ -119,12 +119,12 @@ router.get('/stats', (req, res, next) => {
       FROM srs_cards WHERE user_id = ?
     `).get(userId);
         // Get vocabulary count
-        const vocabCount = db.prepare(`
+        const vocabCount = getDb().prepare(`
       SELECT COUNT(*) as count FROM vocabulary_progress 
       WHERE user_id = ? AND status != 'new'
     `).get(userId);
         // Calculate streak
-        const user = db.prepare('SELECT profile FROM users WHERE id = ?').get(userId);
+        const user = getDb().prepare('SELECT profile FROM users WHERE id = ?').get(userId);
         const profile = JSON.parse(user?.profile || '{}');
         res.json({
             success: true,
@@ -153,7 +153,7 @@ router.get('/activity', (req, res, next) => {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
         // Get daily activity
-        const lessons = db.prepare(`
+        const lessons = getDb().prepare(`
       SELECT date, status, metrics FROM lessons
       WHERE user_id = ? AND date >= ?
       ORDER BY date DESC

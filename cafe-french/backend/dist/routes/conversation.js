@@ -9,7 +9,7 @@ const database_1 = require("../services/database");
 const errorHandler_1 = require("../middleware/errorHandler");
 const rateLimiter_1 = require("../middleware/rateLimiter");
 const router = (0, express_1.Router)();
-const db = database_1.DatabaseService.getInstance().getDb();
+const getDb = () => database_1.DatabaseService.getInstance().getDb();
 // Conversation scenarios
 const SCENARIOS = {
     'cafe-ordering': {
@@ -77,7 +77,7 @@ router.post('/start', rateLimiter_1.aiRateLimiter, async (req, res, next) => {
             }
         ];
         // Save to database
-        db.prepare(`
+        getDb().prepare(`
       INSERT INTO conversations (id, user_id, type, mode, scenario_id, level, status, messages, start_time)
       VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)
     `).run(sessionId, userId, type, mode || 'text', scenarioId, level || 'A1', JSON.stringify(messages), now);
@@ -110,7 +110,7 @@ router.post('/:id/message', rateLimiter_1.aiRateLimiter, async (req, res, next) 
             throw new errorHandler_1.ValidationError('Message content required');
         }
         // Get conversation
-        const conv = db.prepare(`
+        const conv = getDb().prepare(`
       SELECT * FROM conversations WHERE id = ? AND user_id = ?
     `).get(sessionId, userId);
         if (!conv) {
@@ -175,7 +175,7 @@ router.post('/:id/message', rateLimiter_1.aiRateLimiter, async (req, res, next) 
             })));
         }
         // Update conversation
-        db.prepare(`
+        getDb().prepare(`
       UPDATE conversations SET messages = ?, corrections = ? WHERE id = ?
     `).run(JSON.stringify(messages), JSON.stringify(allCorrections), sessionId);
         res.json({
@@ -200,7 +200,7 @@ router.post('/:id/end', async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const sessionId = req.params.id;
-        const conv = db.prepare(`
+        const conv = getDb().prepare(`
       SELECT * FROM conversations WHERE id = ? AND user_id = ?
     `).get(sessionId, userId);
         if (!conv) {
@@ -261,7 +261,7 @@ router.post('/:id/end', async (req, res, next) => {
             responseTimeAverage: totalDuration / (userMessages.length || 1),
         };
         // Update conversation
-        db.prepare(`
+        getDb().prepare(`
       UPDATE conversations SET 
         status = 'completed',
         debrief = ?,
@@ -290,7 +290,7 @@ router.get('/:id', (req, res, next) => {
     try {
         const userId = req.user.userId;
         const sessionId = req.params.id;
-        const conv = db.prepare(`
+        const conv = getDb().prepare(`
       SELECT * FROM conversations WHERE id = ? AND user_id = ?
     `).get(sessionId, userId);
         if (!conv) {
@@ -333,7 +333,7 @@ router.get('/history', (req, res, next) => {
     try {
         const userId = req.user.userId;
         const limit = parseInt(req.query.limit) || 20;
-        const conversations = db.prepare(`
+        const conversations = getDb().prepare(`
       SELECT id, type, scenario_id, level, status, metrics, start_time, end_time
       FROM conversations
       WHERE user_id = ?

@@ -323,7 +323,7 @@ class DatabaseService {
     `);
 
     for (const word of vocabulary) {
-      stmt.run(word);
+      stmt.run({ ...word, gender: word.gender || null });
     }
   }
 

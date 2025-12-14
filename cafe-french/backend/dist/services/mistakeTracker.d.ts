@@ -81,11 +81,11 @@ interface RemediationExercise {
     }[];
 }
 declare class MistakeTracker {
-    private db;
+    private _db;
     private graduationWeeks;
     private minCorrectUsages;
     private minDifferentContexts;
-    constructor();
+    private get db();
     /**
      * Get or create mistake profile for a user
      */

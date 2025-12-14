@@ -84,15 +84,18 @@ interface RemediationExercise {
 }
 
 class MistakeTracker {
-  private db: ReturnType<DatabaseService['getDb']>;
+  private _db: ReturnType<DatabaseService['getDb']> | null = null;
   
   // Graduation criteria
   private graduationWeeks = 3;
   private minCorrectUsages = 5;
   private minDifferentContexts = 3;
 
-  constructor() {
-    this.db = DatabaseService.getInstance().getDb();
+  private get db() {
+    if (!this._db) {
+      this._db = DatabaseService.getInstance().getDb();
+    }
+    return this._db;
   }
 
   /**

@@ -31,11 +31,11 @@ interface DailyLesson {
     metrics: any;
 }
 declare class LessonBuilder {
-    private db;
+    private _db;
     private maxNewItems;
     private optimalNewItems;
     private reviewToNewRatio;
-    constructor();
+    private get db();
     /**
      * Generate a complete daily lesson
      */

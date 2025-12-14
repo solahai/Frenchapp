@@ -297,7 +297,7 @@ class DatabaseService {
       VALUES (@id, @french, @english, @ipa, @part_of_speech, @gender, @level, @frequency, @themes)
     `);
         for (const word of vocabulary) {
-            stmt.run(word);
+            stmt.run({ ...word, gender: word.gender || null });
         }
     }
     seedGrammarRules() {

@@ -4,9 +4,15 @@ node_modules/
 .pnp.js
 
 # Build outputs
-dist/
 build/
 *.tsbuildinfo
+
+# Keep backend dist for deployment
+# dist/
+
+# Native builds
+android/
+ios/
 
 # Environment files (contain secrets)
 .env

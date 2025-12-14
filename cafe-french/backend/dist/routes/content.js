@@ -6,7 +6,7 @@ const database_1 = require("../services/database");
 const openai_1 = require("../services/openai");
 const rateLimiter_1 = require("../middleware/rateLimiter");
 const router = (0, express_1.Router)();
-const db = database_1.DatabaseService.getInstance().getDb();
+const getDb = () => database_1.DatabaseService.getInstance().getDb();
 // GET /content/vocabulary
 router.get('/vocabulary', (req, res, next) => {
     try {
@@ -26,7 +26,7 @@ router.get('/vocabulary', (req, res, next) => {
         }
         query += ' ORDER BY frequency DESC LIMIT ? OFFSET ?';
         params.push(limit, offset);
-        const vocabulary = db.prepare(query).all(...params);
+        const vocabulary = getDb().prepare(query).all(...params);
         res.json({
             success: true,
             data: vocabulary.map(v => ({
@@ -52,7 +52,7 @@ router.get('/vocabulary', (req, res, next) => {
 router.get('/vocabulary/:id', (req, res, next) => {
     try {
         const { id } = req.params;
-        const vocab = db.prepare('SELECT * FROM vocabulary WHERE id = ?').get(id);
+        const vocab = getDb().prepare('SELECT * FROM vocabulary WHERE id = ?').get(id);
         if (!vocab) {
             res.status(404).json({
                 success: false,
@@ -98,7 +98,7 @@ router.get('/grammar', (req, res, next) => {
             params.push(category);
         }
         query += ' ORDER BY level, category';
-        const rules = db.prepare(query).all(...params);
+        const rules = getDb().prepare(query).all(...params);
         res.json({
             success: true,
             data: rules.map(r => ({
@@ -122,7 +122,7 @@ router.get('/grammar', (req, res, next) => {
 router.get('/grammar/:id', (req, res, next) => {
     try {
         const { id } = req.params;
-        const rule = db.prepare('SELECT * FROM grammar_rules WHERE id = ?').get(id);
+        const rule = getDb().prepare('SELECT * FROM grammar_rules WHERE id = ?').get(id);
         if (!rule) {
             res.status(404).json({
                 success: false,
@@ -196,7 +196,7 @@ router.get('/culture', (req, res, next) => {
         }
         query += ' ORDER BY created_at DESC LIMIT ?';
         params.push(limit);
-        const content = db.prepare(query).all(...params);
+        const content = getDb().prepare(query).all(...params);
         res.json({
             success: true,
             data: content.map(c => ({

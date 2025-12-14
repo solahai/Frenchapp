@@ -6,7 +6,7 @@ import { DatabaseService } from '../services/database';
 import { NotFoundError, ValidationError } from '../middleware/errorHandler';
 
 const router = Router();
-const db = DatabaseService.getInstance().getDb();
+const getDb = () => DatabaseService.getInstance().getDb();
 
 // 30-day themes
 const THIRTY_DAY_THEMES = [
@@ -48,7 +48,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.userId;
 
     // Get user profile
-    const user = db.prepare('SELECT profile FROM users WHERE id = ?').get(userId) as any;
+    const user = getDb().prepare('SELECT profile FROM users WHERE id = ?').get(userId) as any;
     if (!user) {
       throw new NotFoundError('User');
     }
@@ -56,7 +56,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
     const profile = JSON.parse(user.profile);
 
     // Get SRS stats
-    const srsStats = db.prepare(`
+    const srsStats = getDb().prepare(`
       SELECT
         COUNT(*) as total_cards,
         SUM(CASE WHEN status = 'review' THEN 1 ELSE 0 END) as mastered_cards,
@@ -65,7 +65,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
     `).get(userId) as any;
 
     // Get lesson completion rate
-    const lessonStats = db.prepare(`
+    const lessonStats = getDb().prepare(`
       SELECT
         COUNT(*) as total,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
@@ -73,7 +73,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
     `).get(userId) as any;
 
     // Get vocabulary count
-    const vocabCount = db.prepare(`
+    const vocabCount = getDb().prepare(`
       SELECT COUNT(*) as count FROM vocabulary_progress 
       WHERE user_id = ? AND status != 'new'
     `).get(userId) as any;
@@ -125,7 +125,7 @@ router.get('/weekly-report', (req: Request, res: Response, next: NextFunction) =
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
-    const lessons = db.prepare(`
+    const lessons = getDb().prepare(`
       SELECT * FROM lessons
       WHERE user_id = ? AND date >= ? AND date < ?
     `).all(userId, weekStart.toISOString().split('T')[0], weekEnd.toISOString().split('T')[0]) as any[];
@@ -147,7 +147,7 @@ router.get('/weekly-report', (req: Request, res: Response, next: NextFunction) =
     const daysActive = new Set(lessons.filter(l => l.status === 'completed').map(l => l.date)).size;
 
     // Get user profile for WRRS
-    const user = db.prepare('SELECT profile FROM users WHERE id = ?').get(userId) as any;
+    const user = getDb().prepare('SELECT profile FROM users WHERE id = ?').get(userId) as any;
     const profile = JSON.parse(user?.profile || '{}');
 
     res.json({
@@ -247,7 +247,7 @@ router.post('/challenge/start', (req: Request, res: Response, next: NextFunction
       },
     ];
 
-    db.prepare(`
+    getDb().prepare(`
       INSERT INTO challenges (id, user_id, start_level, target_level, start_date, end_date, daily_plan, weekly_milestones, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
     `).run(
@@ -289,7 +289,7 @@ router.get('/challenge', (req: Request, res: Response, next: NextFunction): void
   try {
     const userId = req.user!.userId;
 
-    const challenge = db.prepare(`
+    const challenge = getDb().prepare(`
       SELECT * FROM challenges WHERE user_id = ? AND status = 'active'
       ORDER BY created_at DESC LIMIT 1
     `).get(userId) as any;
@@ -337,7 +337,7 @@ router.post('/challenge/:id/day/:day/complete', (req: Request, res: Response, ne
     const { id, day } = req.params;
     const { metrics } = req.body;
 
-    const challenge = db.prepare(`
+    const challenge = getDb().prepare(`
       SELECT * FROM challenges WHERE id = ? AND user_id = ?
     `).get(id, userId) as any;
 
@@ -359,7 +359,7 @@ router.post('/challenge/:id/day/:day/complete', (req: Request, res: Response, ne
     progressMetrics.lessonsCompleted = dailyPlan.filter((d: any) => d.completed).length;
     progressMetrics.totalMinutesStudied = (progressMetrics.totalMinutesStudied || 0) + (metrics?.timeSpent || 20);
 
-    db.prepare(`
+    getDb().prepare(`
       UPDATE challenges SET daily_plan = ?, progress_metrics = ?, current_day = ? WHERE id = ?
     `).run(JSON.stringify(dailyPlan), JSON.stringify(progressMetrics), parseInt(day), id);
 

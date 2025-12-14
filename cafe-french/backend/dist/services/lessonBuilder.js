@@ -9,11 +9,17 @@ const srsEngine_1 = require("./srsEngine");
 const uuid_1 = require("uuid");
 class LessonBuilder {
     constructor() {
+        this._db = null;
         // Cognitive load management
         this.maxNewItems = 10;
         this.optimalNewItems = 8;
         this.reviewToNewRatio = 3; // 3 review items per new item
-        this.db = database_1.DatabaseService.getInstance().getDb();
+    }
+    get db() {
+        if (!this._db) {
+            this._db = database_1.DatabaseService.getInstance().getDb();
+        }
+        return this._db;
     }
     /**
      * Generate a complete daily lesson

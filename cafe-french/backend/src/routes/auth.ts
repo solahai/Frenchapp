@@ -9,7 +9,7 @@ import { generateTokens, verifyRefreshToken } from '../middleware/auth';
 import { ValidationError, AuthenticationError } from '../middleware/errorHandler';
 
 const router = Router();
-const db = DatabaseService.getInstance().getDb();
+const getDb = () => DatabaseService.getInstance().getDb();
 
 // Validation schemas
 const registerSchema = z.object({
@@ -31,7 +31,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const data = registerSchema.parse(req.body);
 
     // Check if email exists
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(data.email);
+    const existing = getDb().prepare('SELECT id FROM users WHERE email = ?').get(data.email);
     if (existing) {
       throw new ValidationError('Email already registered');
     }
@@ -109,7 +109,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       },
     };
 
-    db.prepare(`
+    getDb().prepare(`
       INSERT INTO users (id, email, password_hash, display_name, preferences, profile, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
@@ -156,7 +156,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const data = loginSchema.parse(req.body);
 
     // Find user
-    const user = db.prepare(`
+    const user = getDb().prepare(`
       SELECT id, email, password_hash, display_name, preferences, profile
       FROM users WHERE email = ?
     `).get(data.email) as any;
@@ -175,7 +175,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const { accessToken, refreshToken } = generateTokens(user.id, user.email);
 
     // Update last active
-    db.prepare(`UPDATE users SET updated_at = ? WHERE id = ?`).run(
+    getDb().prepare(`UPDATE users SET updated_at = ? WHERE id = ?`).run(
       new Date().toISOString(),
       user.id
     );

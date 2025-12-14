@@ -25,7 +25,7 @@ interface ReviewResult {
 }
 type Quality = 0 | 1 | 2 | 3 | 4 | 5;
 declare class SRSEngine {
-    private db;
+    private _db;
     private learningSteps;
     private graduatingInterval;
     private easyInterval;
@@ -35,7 +35,7 @@ declare class SRSEngine {
     private hardIntervalModifier;
     private lapseNewInterval;
     private leechThreshold;
-    constructor();
+    private get db();
     /**
      * Get cards due for review
      */

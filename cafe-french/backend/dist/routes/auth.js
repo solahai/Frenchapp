@@ -12,7 +12,7 @@ const database_1 = require("../services/database");
 const auth_1 = require("../middleware/auth");
 const errorHandler_1 = require("../middleware/errorHandler");
 const router = (0, express_1.Router)();
-const db = database_1.DatabaseService.getInstance().getDb();
+const getDb = () => database_1.DatabaseService.getInstance().getDb();
 // Validation schemas
 const registerSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
@@ -30,7 +30,7 @@ router.post('/register', async (req, res, next) => {
     try {
         const data = registerSchema.parse(req.body);
         // Check if email exists
-        const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(data.email);
+        const existing = getDb().prepare('SELECT id FROM users WHERE email = ?').get(data.email);
         if (existing) {
             throw new errorHandler_1.ValidationError('Email already registered');
         }
@@ -103,7 +103,7 @@ router.post('/register', async (req, res, next) => {
                 lastUpdated: now,
             },
         };
-        db.prepare(`
+        getDb().prepare(`
       INSERT INTO users (id, email, password_hash, display_name, preferences, profile, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(userId, data.email, passwordHash, data.displayName, JSON.stringify(defaultPreferences), JSON.stringify(defaultProfile), now, now);
@@ -139,7 +139,7 @@ router.post('/login', async (req, res, next) => {
     try {
         const data = loginSchema.parse(req.body);
         // Find user
-        const user = db.prepare(`
+        const user = getDb().prepare(`
       SELECT id, email, password_hash, display_name, preferences, profile
       FROM users WHERE email = ?
     `).get(data.email);
@@ -154,7 +154,7 @@ router.post('/login', async (req, res, next) => {
         // Generate tokens
         const { accessToken, refreshToken } = (0, auth_1.generateTokens)(user.id, user.email);
         // Update last active
-        db.prepare(`UPDATE users SET updated_at = ? WHERE id = ?`).run(new Date().toISOString(), user.id);
+        getDb().prepare(`UPDATE users SET updated_at = ? WHERE id = ?`).run(new Date().toISOString(), user.id);
         res.json({
             success: true,
             data: {

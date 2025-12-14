@@ -40,7 +40,7 @@ type Quality = 0 | 1 | 2 | 3 | 4 | 5;
 // 5 = perfect, instant recall
 
 class SRSEngine {
-  private db: ReturnType<DatabaseService['getDb']>;
+  private _db: ReturnType<DatabaseService['getDb']> | null = null;
 
   // Learning steps in minutes
   private learningSteps = [1, 10, 60, 1440]; // 1min, 10min, 1hr, 1day
@@ -53,8 +53,11 @@ class SRSEngine {
   private lapseNewInterval = 0.0; // Reset to 0 on lapse
   private leechThreshold = 8;
 
-  constructor() {
-    this.db = DatabaseService.getInstance().getDb();
+  private get db() {
+    if (!this._db) {
+      this._db = DatabaseService.getInstance().getDb();
+    }
+    return this._db;
   }
 
   /**

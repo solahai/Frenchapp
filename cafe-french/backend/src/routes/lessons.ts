@@ -6,7 +6,7 @@ import { DatabaseService } from '../services/database';
 import { NotFoundError, ValidationError } from '../middleware/errorHandler';
 
 const router = Router();
-const db = DatabaseService.getInstance().getDb();
+const getDb = () => DatabaseService.getInstance().getDb();
 
 // GET /lessons/daily
 router.get('/daily', async (req: Request, res: Response, next: NextFunction) => {
@@ -15,7 +15,7 @@ router.get('/daily', async (req: Request, res: Response, next: NextFunction) => 
     const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
 
     // Get user profile for level
-    const user = db.prepare('SELECT profile FROM users WHERE id = ?').get(userId) as any;
+    const user = getDb().prepare('SELECT profile FROM users WHERE id = ?').get(userId) as any;
     if (!user) {
       throw new NotFoundError('User');
     }
@@ -89,7 +89,7 @@ router.get('/:id', (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.userId;
     const lessonId = req.params.id;
 
-    const lesson = db.prepare(`
+    const lesson = getDb().prepare(`
       SELECT * FROM lessons WHERE id = ? AND user_id = ?
     `).get(lessonId, userId) as any;
 
@@ -121,7 +121,7 @@ router.post('/:id/start', (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.userId;
     const lessonId = req.params.id;
 
-    const lesson = db.prepare(`
+    const lesson = getDb().prepare(`
       SELECT * FROM lessons WHERE id = ? AND user_id = ?
     `).get(lessonId, userId) as any;
 
@@ -129,7 +129,7 @@ router.post('/:id/start', (req: Request, res: Response, next: NextFunction) => {
       throw new NotFoundError('Lesson');
     }
 
-    db.prepare(`
+    getDb().prepare(`
       UPDATE lessons SET status = 'in_progress' WHERE id = ?
     `).run(lessonId);
 
@@ -149,7 +149,7 @@ router.post('/:id/complete', (req: Request, res: Response, next: NextFunction) =
     const lessonId = req.params.id;
     const { metrics } = req.body;
 
-    const lesson = db.prepare(`
+    const lesson = getDb().prepare(`
       SELECT * FROM lessons WHERE id = ? AND user_id = ?
     `).get(lessonId, userId) as any;
 
@@ -160,7 +160,7 @@ router.post('/:id/complete', (req: Request, res: Response, next: NextFunction) =
     const currentMetrics = JSON.parse(lesson.metrics);
     const updatedMetrics = { ...currentMetrics, ...metrics };
 
-    db.prepare(`
+    getDb().prepare(`
       UPDATE lessons SET 
         status = 'completed',
         metrics = ?,
@@ -169,7 +169,7 @@ router.post('/:id/complete', (req: Request, res: Response, next: NextFunction) =
     `).run(JSON.stringify(updatedMetrics), new Date().toISOString(), lessonId);
 
     // Update user profile (streak, study time, etc.)
-    const user = db.prepare('SELECT profile FROM users WHERE id = ?').get(userId) as any;
+    const user = getDb().prepare('SELECT profile FROM users WHERE id = ?').get(userId) as any;
     const profile = JSON.parse(user.profile);
     
     const today = new Date().toISOString().split('T')[0];
@@ -195,7 +195,7 @@ router.post('/:id/complete', (req: Request, res: Response, next: NextFunction) =
       profile.lastActiveDate = new Date().toISOString();
     }
 
-    db.prepare(`UPDATE users SET profile = ? WHERE id = ?`).run(
+    getDb().prepare(`UPDATE users SET profile = ? WHERE id = ?`).run(
       JSON.stringify(profile),
       userId
     );
@@ -220,7 +220,7 @@ router.post('/:id/activity/:activityId/complete', (req: Request, res: Response, 
     const { id: lessonId, activityId } = req.params;
     const { score, response, timeSpent, audioUrl } = req.body;
 
-    const lesson = db.prepare(`
+    const lesson = getDb().prepare(`
       SELECT * FROM lessons WHERE id = ? AND user_id = ?
     `).get(lessonId, userId) as any;
 
@@ -262,7 +262,7 @@ router.post('/:id/activity/:activityId/complete', (req: Request, res: Response, 
     metrics.totalTimeSpent += timeSpent || 0;
 
     // Save updates
-    db.prepare(`
+    getDb().prepare(`
       UPDATE lessons SET content = ?, metrics = ? WHERE id = ?
     `).run(JSON.stringify(content), JSON.stringify(metrics), lessonId);
 
@@ -286,7 +286,7 @@ router.get('/history', (req: Request, res: Response, next: NextFunction) => {
     const limit = parseInt(req.query.limit as string) || 30;
     const offset = parseInt(req.query.offset as string) || 0;
 
-    const lessons = db.prepare(`
+    const lessons = getDb().prepare(`
       SELECT id, date, level, status, metrics, completed_at
       FROM lessons 
       WHERE user_id = ?
@@ -294,7 +294,7 @@ router.get('/history', (req: Request, res: Response, next: NextFunction) => {
       LIMIT ? OFFSET ?
     `).all(userId, limit, offset) as any[];
 
-    const total = db.prepare(`
+    const total = getDb().prepare(`
       SELECT COUNT(*) as count FROM lessons WHERE user_id = ?
     `).get(userId) as { count: number };
 

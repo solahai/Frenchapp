@@ -42,15 +42,18 @@ interface DailyLesson {
 }
 
 class LessonBuilder {
-  private db: ReturnType<DatabaseService['getDb']>;
+  private _db: ReturnType<DatabaseService['getDb']> | null = null;
 
   // Cognitive load management
   private maxNewItems = 10;
   private optimalNewItems = 8;
   private reviewToNewRatio = 3; // 3 review items per new item
 
-  constructor() {
-    this.db = DatabaseService.getInstance().getDb();
+  private get db() {
+    if (!this._db) {
+      this._db = DatabaseService.getInstance().getDb();
+    }
+    return this._db;
   }
 
   /**

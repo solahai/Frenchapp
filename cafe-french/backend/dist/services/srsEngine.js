@@ -13,6 +13,7 @@ const uuid_1 = require("uuid");
 // 5 = perfect, instant recall
 class SRSEngine {
     constructor() {
+        this._db = null;
         // Learning steps in minutes
         this.learningSteps = [1, 10, 60, 1440]; // 1min, 10min, 1hr, 1day
         this.graduatingInterval = 1; // days
@@ -23,7 +24,12 @@ class SRSEngine {
         this.hardIntervalModifier = 1.2;
         this.lapseNewInterval = 0.0; // Reset to 0 on lapse
         this.leechThreshold = 8;
-        this.db = database_1.DatabaseService.getInstance().getDb();
+    }
+    get db() {
+        if (!this._db) {
+            this._db = database_1.DatabaseService.getInstance().getDb();
+        }
+        return this._db;
     }
     /**
      * Get cards due for review

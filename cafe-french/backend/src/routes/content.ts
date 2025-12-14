@@ -6,7 +6,7 @@ import { openAIService } from '../services/openai';
 import { aiRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
-const db = DatabaseService.getInstance().getDb();
+const getDb = () => DatabaseService.getInstance().getDb();
 
 // GET /content/vocabulary
 router.get('/vocabulary', (req: Request, res: Response, next: NextFunction) => {
@@ -32,7 +32,7 @@ router.get('/vocabulary', (req: Request, res: Response, next: NextFunction) => {
     query += ' ORDER BY frequency DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
-    const vocabulary = db.prepare(query).all(...params) as any[];
+    const vocabulary = getDb().prepare(query).all(...params) as any[];
 
     res.json({
       success: true,
@@ -60,7 +60,7 @@ router.get('/vocabulary/:id', (req: Request, res: Response, next: NextFunction):
   try {
     const { id } = req.params;
 
-    const vocab = db.prepare('SELECT * FROM vocabulary WHERE id = ?').get(id) as any;
+    const vocab = getDb().prepare('SELECT * FROM vocabulary WHERE id = ?').get(id) as any;
 
     if (!vocab) {
       res.status(404).json({
@@ -113,7 +113,7 @@ router.get('/grammar', (req: Request, res: Response, next: NextFunction) => {
 
     query += ' ORDER BY level, category';
 
-    const rules = db.prepare(query).all(...params) as any[];
+    const rules = getDb().prepare(query).all(...params) as any[];
 
     res.json({
       success: true,
@@ -139,7 +139,7 @@ router.get('/grammar/:id', (req: Request, res: Response, next: NextFunction): vo
   try {
     const { id } = req.params;
 
-    const rule = db.prepare('SELECT * FROM grammar_rules WHERE id = ?').get(id) as any;
+    const rule = getDb().prepare('SELECT * FROM grammar_rules WHERE id = ?').get(id) as any;
 
     if (!rule) {
       res.status(404).json({
@@ -227,7 +227,7 @@ router.get('/culture', (req: Request, res: Response, next: NextFunction) => {
     query += ' ORDER BY created_at DESC LIMIT ?';
     params.push(limit);
 
-    const content = db.prepare(query).all(...params) as any[];
+    const content = getDb().prepare(query).all(...params) as any[];
 
     res.json({
       success: true,

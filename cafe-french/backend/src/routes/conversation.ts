@@ -9,7 +9,7 @@ import { NotFoundError, ValidationError } from '../middleware/errorHandler';
 import { aiRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
-const db = DatabaseService.getInstance().getDb();
+const getDb = () => DatabaseService.getInstance().getDb();
 
 // Conversation scenarios
 const SCENARIOS: Record<string, { title: string; context: string; openingPrompt: string }> = {
@@ -83,7 +83,7 @@ router.post('/start', aiRateLimiter, async (req: Request, res: Response, next: N
     ];
 
     // Save to database
-    db.prepare(`
+    getDb().prepare(`
       INSERT INTO conversations (id, user_id, type, mode, scenario_id, level, status, messages, start_time)
       VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)
     `).run(
@@ -128,7 +128,7 @@ router.post('/:id/message', aiRateLimiter, async (req: Request, res: Response, n
     }
 
     // Get conversation
-    const conv = db.prepare(`
+    const conv = getDb().prepare(`
       SELECT * FROM conversations WHERE id = ? AND user_id = ?
     `).get(sessionId, userId) as any;
 
@@ -222,7 +222,7 @@ router.post('/:id/message', aiRateLimiter, async (req: Request, res: Response, n
     }
 
     // Update conversation
-    db.prepare(`
+    getDb().prepare(`
       UPDATE conversations SET messages = ?, corrections = ? WHERE id = ?
     `).run(JSON.stringify(messages), JSON.stringify(allCorrections), sessionId);
 
@@ -249,7 +249,7 @@ router.post('/:id/end', async (req: Request, res: Response, next: NextFunction) 
     const userId = req.user!.userId;
     const sessionId = req.params.id;
 
-    const conv = db.prepare(`
+    const conv = getDb().prepare(`
       SELECT * FROM conversations WHERE id = ? AND user_id = ?
     `).get(sessionId, userId) as any;
 
@@ -319,7 +319,7 @@ router.post('/:id/end', async (req: Request, res: Response, next: NextFunction) 
     };
 
     // Update conversation
-    db.prepare(`
+    getDb().prepare(`
       UPDATE conversations SET 
         status = 'completed',
         debrief = ?,
@@ -350,7 +350,7 @@ router.get('/:id', (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.userId;
     const sessionId = req.params.id;
 
-    const conv = db.prepare(`
+    const conv = getDb().prepare(`
       SELECT * FROM conversations WHERE id = ? AND user_id = ?
     `).get(sessionId, userId) as any;
 
@@ -397,7 +397,7 @@ router.get('/history', (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user!.userId;
     const limit = parseInt(req.query.limit as string) || 20;
 
-    const conversations = db.prepare(`
+    const conversations = getDb().prepare(`
       SELECT id, type, scenario_id, level, status, metrics, start_time, end_time
       FROM conversations
       WHERE user_id = ?

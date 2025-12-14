@@ -8,11 +8,17 @@ const openai_1 = require("./openai");
 const uuid_1 = require("uuid");
 class MistakeTracker {
     constructor() {
+        this._db = null;
         // Graduation criteria
         this.graduationWeeks = 3;
         this.minCorrectUsages = 5;
         this.minDifferentContexts = 3;
-        this.db = database_1.DatabaseService.getInstance().getDb();
+    }
+    get db() {
+        if (!this._db) {
+            this._db = database_1.DatabaseService.getInstance().getDb();
+        }
+        return this._db;
     }
     /**
      * Get or create mistake profile for a user
